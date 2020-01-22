@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE FlexibleContexts    #-}
 
-module Text.Record.PrettyPrint (FQuery, VQuery, VFmt, format, fields, values,
+module Text.PrettyPrint.Records (FQuery, VQuery, VFmt, format, fields, values,
     dfltFmt, simpleFmt, Formatter(..)) where
 
 import GHC.Generics

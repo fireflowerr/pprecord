@@ -85,7 +85,7 @@ class VQuery a where
 --        dfltFmt :: Formatter a
 --        dfltFmt = Formatter
 --            { arg = text
---            , label = \a b -> text (a <> ":") <+> b
+--            , label = \\a b -> text (a <> ":") <+> b
 --            , finally = vcat left }
 -- @
 --

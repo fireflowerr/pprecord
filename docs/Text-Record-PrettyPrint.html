@@ -18,6 +18,6 @@
        dfltFmt :: Formatter a
        dfltFmt = Formatter
            { arg = text
-           , label = a b -&gt; text (a &lt;&gt; &quot;:&quot;) <a href="+">+</a> b
+           , label = \a b -&gt; text (a &lt;&gt; &quot;:&quot;) <a href="+">+</a> b
            , finally = vcat left }
 </pre></div><div class="subs constructors"><p class="caption">Constructors</p><table><tr><td class="src"><a id="v:Formatter" class="def">Formatter</a></td><td class="doc empty">&nbsp;</td></tr><tr><td colspan="2"><div class="subs fields"><p class="caption">Fields</p><ul><li><dfn class="src"><a id="v:arg" class="def">arg</a> :: <a href="file:///home/fireflower/.ghcup/ghc/8.6.5/share/doc/ghc-8.6.5/html/libraries/base-4.12.0.0/Data-String.html#t:String" title="Data.String">String</a> -&gt; Box</dfn><div class="doc"><p>Converts Record fields to Boxes</p></div></li><li><dfn class="src"><a id="v:label" class="def">label</a> :: <a href="file:///home/fireflower/.ghcup/ghc/8.6.5/share/doc/ghc-8.6.5/html/libraries/base-4.12.0.0/Data-String.html#t:String" title="Data.String">String</a> -&gt; Box -&gt; Box</dfn><div class="doc"><p>Merge accessor with field</p></div></li><li><dfn class="src"><a id="v:finally" class="def">finally</a> :: [Box] -&gt; Box</dfn><div class="doc"><p>Finally reduce list of boxes</p></div></li></ul></div></td></tr></table></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.22.0</p></div></body></html>

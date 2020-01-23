@@ -8,7 +8,7 @@ synopsis:            A library for pretty printing Records
 description:         A pretty-printing library which is accumulates record
                      accessors as Strings, and fields as Strings or formatted
                      boxes. Functions are included to output lists of records as
-                     a table, or specially format individual records.
+                     a table, or apply a format to individual records.
 homepage:            https://github.com/paroxayte/pprecord
 author:              paroxayte
 maintainer:          36929366+paroxayte@users.noreply.github.com

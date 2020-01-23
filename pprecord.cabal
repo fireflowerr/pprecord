@@ -3,7 +3,7 @@ cabal-version:       >= 1.10
 -- For further documentation, see http://haskell.org/cabal/users-guide/
 
 name:                pprecord
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            A library for pretty printing Records
 description:         A pretty-printing library which is accumulates record
                      accessors as Strings, and fields as Strings or formatted

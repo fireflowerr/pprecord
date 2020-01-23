@@ -3,8 +3,10 @@
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE FlexibleContexts    #-}
 
-module Text.PrettyPrint.Records (FQuery, VQuery, RFmt, format, formatUntil, fields, values,
-    dfltFmt, simpleFmt, tableFmt, Format(..), TableFmt(..), formatTable) where
+-- | Type classes in this module are intended to be derived with DeriveGeneric.
+module Text.PrettyPrint.Records (FQuery, VQuery, RFmt, TFmt, format, formatUntil
+    , fields, values, dfltFmt, simpleFmt, tableFmt, Format(..), TableFmt(..)
+    , formatTable) where
 
 import GHC.Generics
 import Data.Typeable (cast, Typeable)
@@ -43,6 +45,7 @@ instance Selector s => FQuery' (S1 s f) where
 
 -- | Accumulate Record accessors as [String] (in order of definition).
 class FQuery a where
+    -- | See 'FQuery'.
     fields :: a -> [String]
     default fields :: (Generic a, FQuery' (Rep a)) => a -> [String]
     fields = fields' . from
@@ -73,6 +76,7 @@ instance VQuery' V1 where
 
 -- | Accumulate Record values as [String] (in order of definition).
 class VQuery a where
+    -- | See 'VQuery'.
     values :: a -> [String]
     default values :: (Generic a, VQuery' (Rep a)) => a -> [String]
     values = values' . from
@@ -102,7 +106,7 @@ data Format a = Format
 class RFmt' f where
     fvalues' :: (Typeable a, RFmt a) => Int -> f p -> Format a -> [Box]
 
--- |Reduce Record to Box given a Format
+-- |Reduce Record to Box given a Format.
 --
 -- @
 --
@@ -132,6 +136,10 @@ class (Typeable a, FQuery a, Show a) => RFmt a where
 instance RFmt' f => RFmt' (M1 t c f) where
     fvalues' n (M1 x) = fvalues' n x
 
+instance (RFmt' f, RFmt' g) => RFmt' (f :+: g) where
+    fvalues' n (L1 x) = fvalues' n x
+    fvalues' n (R1 x) = fvalues' n x
+
 instance (RFmt' f, RFmt' g) => RFmt' (f :*: g) where
     fvalues' n (x :*: y) f = let
         l = fvalues' n x f
@@ -152,14 +160,42 @@ instance RFmt' U1 where
 instance RFmt' V1 where
     fvalues' _ _ _ = []
 
+-- TFmt ------------------------------------------------------------------------
+
+class TFmt' f where
+    tvalues' :: f p -> [String]
+
+instance TFmt' f => TFmt' (M1 t c f) where
+    tvalues' (M1 x) = tvalues' x
+
+instance (TFmt' f, TFmt' g) => TFmt' (f :*: g) where
+    tvalues' (x :*: y) = tvalues' x <> tvalues' y
+
+instance (Show c) => TFmt' (Rec0 c) where
+    tvalues' K1{unK1=v} = [show v]
+
+instance TFmt' U1 where
+    tvalues' _ = []
+
+instance TFmt' V1 where
+    tvalues' _ = []
+
+-- | Identical to 'VQuery' except no instance for sum types (a necessary
+-- restriction for printing tables).
+class TFmt a where
+    tvalues :: a -> [String]
+    default tvalues :: (Generic a, TFmt' (Rep a)) => a -> [String]
+    tvalues = tvalues' . from
+
+
 -- Helpers ---------------------------------------------------------------------
 
 data TableFmt = TableFmt
-    { -- | Converts Record fields to Boxes
+    { -- | Converts Record fields to Boxes.
       argT     :: String -> Box,
-      -- | Merge accessor with field
+      -- | Merge accessor with field.
       labelT :: String -> [Box] -> Box,
-      -- | Finally reduce list of boxes
+      -- | Finally reduce list of boxes.
       finallyT :: [Box]  -> Box
     }
 
@@ -169,18 +205,18 @@ dfltFmt = Format
     , label = \a b -> text (a <> ":") <+> b
     , finally = vcat left }
 
--- | A table formatter which produces a top-down table
+-- | A table formatter which produces a top-down table.
 tableFmt :: TableFmt
 tableFmt = TableFmt
     { argT = text
     , labelT = \a bs -> vcat left $ text a : bs
     , finallyT = hsep 1 top }
 
--- | Given String representation of accessor and value return b
+-- | Given String representation of accessor and value return b.
 simpleFmt :: (VQuery a, FQuery a) => (String -> String -> b) -> a  -> [b]
 simpleFmt f x = zipWith f (fields x) (values x)
 
--- | Format Record a with up to n levels of recursivity
+-- | Format Record a with up to n levels of recursivity.
 formatUntil :: RFmt a => Int -> a -> Format a -> Box
 formatUntil n a f = let
     lhs = fields a
@@ -190,11 +226,11 @@ formatUntil n a f = let
         else finally f $ zipWith (label f) lhs rhs
 
 -- | Format Record a record fully expanding the data structure if it is
--- recursive
+-- recursive.
 format :: RFmt a => a -> Format a -> Box
 format = formatUntil (-1)
 
--- | Format a list of RFmt instances as a table (no recursive expansion).
+-- | Format a list of (FQuery, TFmt) instances as a table.
 --
 -- @
 --    __Example:__
@@ -203,7 +239,7 @@ format = formatUntil (-1)
 --           , name :: String
 --           , email :: String } deriving (Generic, Show)
 --        instance FQuery Employee
---        instance RFmt Employee
+--        instance TFmt Employee
 --        e1 = E 3 \"John\" "johnbelcher@foobar.xyz"
 --        e1 = E 3 \"John\" "johnbelcher@foobar.xyz"
 --        e2 = E 17 \"Maria\" "Mariafoobar@net.net"
@@ -220,9 +256,8 @@ format = formatUntil (-1)
 --        4   \"Sammy\"   "sammersfoobar@foo.bar"
 -- @
 --
-formatTable :: RFmt a => [a] -> TableFmt -> Box
+formatTable :: (TFmt a, FQuery a) => [a] -> TableFmt -> Box
 formatTable as t = let
-    minFmt = Format (argT t) undefined (finallyT t)
     header = fields (head as)
-    fvals  = transpose $ flip (fvalues 1) minFmt <$> as
+    fvals  = transpose $ fmap (argT t) . tvalues <$> as
     in finallyT t $ zipWith (labelT t) header fvals

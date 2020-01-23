@@ -25,6 +25,10 @@ instance FQuery' U1 where
 instance FQuery c => FQuery' (Rec0 c) where
     fields' _ = []
 
+instance (FQuery' f, FQuery' g) => FQuery' (f :+: g) where
+    fields' (L1 x) = fields' x
+    fields' (R1 x) = fields' x
+
 instance (FQuery' f, FQuery' g) => FQuery' (f :*: g) where
     fields' (x :*: y) = fields' x <> fields' y
 
@@ -50,6 +54,10 @@ class VQuery' f where
 
 instance VQuery' f => VQuery' (M1 t c f) where
     values' (M1 x) = values' x
+
+instance (VQuery' f, VQuery' g) => VQuery' (f :+: g) where
+    values' (L1 x) = values' x
+    values' (R1 x) = values' x
 
 instance (VQuery' f, VQuery' g) => VQuery' (f :*: g) where
     values' (x :*: y) = values' x <> values' y
